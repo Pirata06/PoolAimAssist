@@ -44,7 +44,21 @@ class OverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    try {
+    if (Build.VERSION.SDK_INT >= 29) {
+        startForeground(
+            NOTIFICATION_ID,
+            buildNotification(),
+            android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+        )
+    } else {
         startForeground(NOTIFICATION_ID, buildNotification())
+    }
+} catch (e: Exception) {
+    android.util.Log.e("PoolAimAssist", "Foreground error", e)
+    stopSelf()
+    return START_NOT_STICKY
+    }
 
         val resultCode = intent?.getIntExtra(EXTRA_RESULT_CODE, -1) ?: -1
         val resultData: Intent? = intent?.getParcelableExtra(EXTRA_RESULT_DATA)
@@ -65,8 +79,14 @@ class OverlayService : Service() {
             }
         }, Handler(Looper.getMainLooper()))
 
-        addOverlayWindow()
-        addControlPanel()
+    try {
+    addOverlayWindow()
+    addControlPanel()
+} catch (e: Exception) {
+    android.util.Log.e("PoolAimAssist", "Overlay error", e)
+    stopSelf()
+    return START_NOT_STICKY
+    }
 
         if (!CalibrationStore.hasCalibration(this)) {
             // First run: walk the user through tapping the 6 pockets before showing guides.
